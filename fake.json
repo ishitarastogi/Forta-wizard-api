@@ -1,0 +1,20 @@
+{
+  "abis": {
+    "account-balance-abi": {
+      "monitor-function-calls-abi": "contractAbiFileName1.json"
+    }
+  },
+
+  "monitor-function-calls": {
+    "address": "contractAddress1",
+    "address1": "contractAddress2",
+
+    "functions": {
+      "FunctionName1": {
+        "expression": "amount > 6000",
+        "type": "Type",
+        "severity": "Severity"
+      }
+    }
+  }
+}
