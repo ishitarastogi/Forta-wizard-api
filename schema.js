@@ -17,13 +17,15 @@ const schema = {
     severity: Joi.string().required(),
   }),
   adminEvents: Joi.object().keys({
-    abiFile: Joi.object().required(),
+    //abiFile: Joi.object().required(),
     address: Joi.string().pattern(new RegExp(addrPattern)).required(),
-    expression: Joi.any().when("address", {
-      is: expPattern,
-      then: Joi.required(),
-      otherwise: Joi.optional(),
-    }),
+    expression: Joi.string()
+      .invalid(null, false, 0, "")
+      .required()
+      .when("address", {
+        is: expPattern,
+        then: Joi.forbidden(),
+      }),
     developerAbbreviation: Joi.string().required(),
     protocolName: Joi.string().required(),
     protocolAbbreviation: Joi.string().required(),
@@ -37,11 +39,11 @@ const schema = {
     protocolName: Joi.string().required(),
     protocolAbbreviation: Joi.string().required(),
     address: Joi.string().pattern(new RegExp(addrPattern)).required(),
-    expression: Joi.any()
+    expression: Joi.string()
       .when("address", {
-        is: expPattern,
+        not: expPattern,
         then: Joi.required(),
-        otherwise: Joi.optional(),
+        otherwise: Joi.forbidden(),
       })
       .optional(),
     type: Joi.string().required(),
@@ -60,14 +62,13 @@ const accountBalance = {
   alertMinimumIntervalSeconds: 86400,
 };
 const adminEvents = {
-  developerAbbreviation: "",
-  protocolName: "",
-  protocolAbbreviation: "",
-  expression: expPattern,
+  // abiFile: "filename1.json",
+  address: "0x1aD91ee08f21bE3dE0BA2ba6918E714dA6B45836",
+  developerAbbreviation: "abc",
+  protocolName: "abc",
+  protocolAbbreviation: "abc",
   type: "Type",
   severity: "Severity",
-  address: "contractAddress1",
-  abiFile: "filename1.json",
   proxy: "contractName2",
 };
 const monitorFunctionCalls = {
@@ -86,9 +87,9 @@ const adminEventsResult = schema.adminEvents.validate(adminEvents);
 const monitorFunctionCallsResult =
   schema.monitorFunctionCalls.validate(monitorFunctionCalls);
 
-if (result.error) {
-  console.log(result.error.details);
+if (adminEventsResult.error) {
+  console.log(adminEventsResult.error.details);
 } else {
-  console.log("Validated Data", result);
+  console.log("Validated Data", adminEventsResult);
 }
 module.exports = schema;
