@@ -1,28 +1,44 @@
 const Joi = require("joi");
-const { ethers } = require("ethers");
 const addrPattern = /^0[xX][a-fA-F0-9]{40}$/;
 const expPattern = /^0[xX](?!0+$)[a-fA-F0-9]{40}$/;
 
-// const ABI = [
-//   {
-//     type: "constructor",
-//     payable: false,
-//     inputs: [
-//       { type: "string", name: "symbol" },
-//       { type: "string", name: "name" },
-//     ],
-//   },
-// ];
+const eventSchema = {
+  type: Joi.string().required(),
+  name: Joi.string().required,
+  inputs: Joi.array().items(
+    Joi.object({
+      name: Joi.string().required,
+      type: Joi.string().required(),
+      indexed: Joi.boolean().required(),
+    })
+  ),
+  anonymous: Joi.boolean().required(),
+};
 
-// console.log(typeof abiFile);
-// const unixTimestampSchema = Joi.number()
-//   .required()
-//   .strict()
-//   .$.integer()
-//   .min(0)
-//   .max(2147483648)
-//   .rule({ message: '"{{#label}}" must be a valid unix timestamp' });
-// const jsTimestamp = Date.now();
+const functionSchema = {
+  type: Joi.string().required(),
+  name: Joi.string().required,
+  inputs: Joi.array().items(
+    Joi.object({
+      name: Joi.string().required,
+      type: Joi.string().alphanum().required(),
+      indexed: Joi.boolean().optional(),
+    })
+  ),
+  anonymous: Joi.boolean().required(),
+  outputs: Joi.array().items(
+    Joi.object({
+      name: Joi.string().required,
+      type: Joi.string().alphanum(),
+      payable: Joi.boolean(),
+    })
+  ),
+};
+
+const constructorSchema = {
+  stateMutability: Joi.string(),
+  type: Joi.string(),
+};
 
 const schema = {
   accountBalance: Joi.object().keys({
@@ -31,13 +47,18 @@ const schema = {
     protocolAbbreviation: Joi.string().allow(null, ""),
     address: Joi.string().pattern(new RegExp(addrPattern)).required(),
     thresholdEth: Joi.number(),
-    // alertMinimumIntervalSeconds: jsTimestamp,
+    alertMinimumIntervalSeconds: Joi.number().required(),
     type: Joi.string().required(),
     severity: Joi.string().required(),
   }),
 
   adminEvents: Joi.object().keys({
-    //abiFile: ethers.utils.Interface(ABI),
+    abiFile: Joi.array().items(
+      Joi.object({
+        inputs: Joi.array().required,
+        type: Joi.string().required(),
+      })
+    ),
     address: Joi.string().pattern(new RegExp(addrPattern)).required(),
     expression: Joi.string()
       .invalid(null, false, 0, "")
@@ -60,8 +81,7 @@ const schema = {
     protocolName: Joi.string().required(),
     protocolAbbreviation: Joi.string().required(),
     address: Joi.string().pattern(new RegExp(addrPattern)).required(),
-    //expression:""
-
+    expression: Joi.string().required(),
     type: Joi.string().required(),
     severity: Joi.string().required(),
   }),
@@ -75,11 +95,11 @@ const accountBalance = {
   thresholdEth: 5,
   type: "Type",
   severity: "Severity",
-  //alertMinimumIntervalSeconds: ,
+  alertMinimumIntervalSeconds: 86400,
 };
 
 const adminEvents = {
-  //abiFile: ABI,
+  abiFile: ABI,
   address: "0x1aD91ee08f21bE3dE0BA2ba6918E714dA6B45836",
   developerAbbreviation: "SUSH",
   protocolName: "SushiSwap",
@@ -95,9 +115,7 @@ const monitorFunctionCalls = {
   protocolName: "Uniswap",
   protocolAbbreviation: "UNI",
   address: "0x1aD91ee08f21bE3dE0BA2ba6918E714dA6B45836",
-
   type: "Type",
-
   severity: "Severity",
 };
 
@@ -106,9 +124,9 @@ const adminEventsResult = schema.adminEvents.validate(adminEvents);
 const monitorFunctionCallsResult =
   schema.monitorFunctionCalls.validate(monitorFunctionCalls);
 
-if (monitorFunctionCallsResult.error) {
-  console.log(monitorFunctionCallsResult.error.details);
+if (accountBalanceResult.error) {
+  console.log(accountBalanceResult.error.details);
 } else {
-  console.log("Validated Data", monitorFunctionCallsResult);
+  console.log("Validated Data", accountBalanceResult);
 }
 module.exports = schema;
