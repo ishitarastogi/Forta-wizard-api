@@ -53,12 +53,6 @@ const schema = {
   }),
 
   adminEvents: Joi.object().keys({
-    abiFile: Joi.array().items(
-      Joi.object({
-        inputs: Joi.array().required,
-        type: Joi.string().required(),
-      })
-    ),
     address: Joi.string().pattern(new RegExp(addrPattern)).required(),
     expression: Joi.string()
       .invalid(null, false, 0, "")
