@@ -6,23 +6,6 @@ const ABI = [
   "function transferFrom(address from, address to, uint value)",
   "event PersonAdded(uint indexed id, tuple(string name, uint16 age) person)",
 ];
-const EventName1 = Joi.object({
-  type: Joi.string().required().trim(),
-  severity: Joi.string().required().trim(),
-});
-const EventName2 = Joi.object({
-  type: Joi.string().required().trim(),
-  severity: Joi.string().required().trim(),
-});
-
-const ethersSchema = Joi.custom((value) => {
-  try {
-    new ethers.utils.Interface(value);
-    return true;
-  } catch (_) {
-    return false;
-  }
-});
 
 const adminEvents = {
   developerAbbreviation: "abc",
@@ -52,13 +35,26 @@ const adminEvents = {
     contractName3: {
       address: "0x1aD91ee08f21bE3dE0BA2ba6918E714dA6B45836",
       abiFile: ABI,
-      proxy: "contractName2"
-
+      proxy: "contractName2",
     },
   },
 };
-const eventSchema = Joi.object({
-  events: Joi.object().pattern(Joi.string(), Joi.object().concat(EventName1)),
+
+const ethersSchema = Joi.custom((value) => {
+  try {
+    new ethers.utils.Interface(value);
+    return true;
+  } catch (_) {
+    return false;
+  }
+});
+const EventName1 = Joi.object({
+  type: Joi.string().required().trim(),
+  severity: Joi.string().required().trim(),
+});
+const EventName2 = Joi.object({
+  type: Joi.string().required().trim(),
+  severity: Joi.string().required().trim(),
 });
 
 const contractName1 = Joi.object({
@@ -74,7 +70,7 @@ const contractName2 = Joi.object({
 const contractName3 = Joi.object({
   abiFile: ethersSchema.required(),
   address: Joi.string().pattern(new RegExp(addrPattern)).required().trim(),
-  proxy:Joi.string().allow("").optional().trim()
+  proxy: Joi.string().allow("").optional().trim(),
 });
 
 const schema = {
