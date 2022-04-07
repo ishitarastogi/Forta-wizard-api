@@ -14,10 +14,7 @@ const EventName2 = Joi.object({
   type: Joi.string().required().trim(),
   severity: Joi.string().required().trim(),
 });
-const EventName3 = Joi.object({
-  type: Joi.string().required().trim(),
-  severity: Joi.string().required().trim(),
-});
+
 const ethersSchema = Joi.custom((value) => {
   try {
     new ethers.utils.Interface(value);
@@ -55,12 +52,8 @@ const adminEvents = {
     contractName3: {
       address: "0x1aD91ee08f21bE3dE0BA2ba6918E714dA6B45836",
       abiFile: ABI,
-      events: {
-        EventName3: {
-          type: "Type",
-          severity: "Severity",
-        },
-      },
+      proxy: "contractName2"
+
     },
   },
 };
@@ -81,7 +74,7 @@ const contractName2 = Joi.object({
 const contractName3 = Joi.object({
   abiFile: ethersSchema.required(),
   address: Joi.string().pattern(new RegExp(addrPattern)).required().trim(),
-  events: Joi.object().pattern(Joi.string(), Joi.object().concat(EventName3)),
+  proxy:Joi.string().allow("").optional().trim()
 });
 
 const schema = {
