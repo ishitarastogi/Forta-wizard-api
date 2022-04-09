@@ -1,45 +1,16 @@
 const Joi = require("joi");
 const addrPattern = /^0[xX][a-fA-F0-9]{40}$/;
 const ethers = require("ethers");
-const ABI = [
+const {
+  monitorFunctionCalls,
+  adminEvents,
+  accountBalance,
+} = require("./data.js");
+const abiFile = [
   "constructor(string symbol, string name)",
   "function transferFrom(address from, address to, uint value)",
   "event PersonAdded(uint indexed id, tuple(string name, uint16 age) person)",
 ];
-
-const adminEvents = {
-  developerAbbreviation: "abc",
-  protocolName: "abc",
-  protocolAbbreviation: "abc",
-  contracts: {
-    contractName1: {
-      address: "0x1aD91ee08f21bE3dE0BA2ba6918E714dA6B45836",
-      abiFile: ABI,
-      events: {
-        EventName1: {
-          type: "Type",
-          severity: "Severity",
-        },
-      },
-    },
-    contractName2: {
-      address: "0x1aD91ee08f21bE3dE0BA2ba6918E714dA6B45836",
-      abiFile: ABI,
-      events: {
-        EventName2: {
-          type: "Type",
-          severity: "Severity",
-        },
-      },
-    },
-    contractName3: {
-      address: "0x1aD91ee08f21bE3dE0BA2ba6918E714dA6B45836",
-      abiFile: ABI,
-      proxy: "contractName2",
-    },
-  },
-};
-
 const ethersSchema = Joi.custom((value) => {
   try {
     new ethers.utils.Interface(value);
@@ -48,51 +19,67 @@ const ethersSchema = Joi.custom((value) => {
     return false;
   }
 });
-const EventName1 = Joi.object({
+
+const events = Joi.object({
   type: Joi.string().required().trim(),
   severity: Joi.string().required().trim(),
+  expression: Joi.string().required().optional().allow(),
+
 });
-const EventName2 = Joi.object({
+const eventSchema = Joi.object().pattern(Joi.string(), events);
+
+const functions = Joi.object({
   type: Joi.string().required().trim(),
   severity: Joi.string().required().trim(),
+  expression: Joi.number().required().optional().allow(),
 });
+const functionSchema = Joi.object().pattern(Joi.string(), functions);
 
-const contractName1 = Joi.object({
-  abiFile: ethersSchema.required(),
+const contractSchemaAB = Joi.object({
   address: Joi.string().pattern(new RegExp(addrPattern)).required().trim(),
-  events: Joi.object().pattern(Joi.string(), Joi.object().concat(EventName1)),
-});
-const contractName2 = Joi.object({
-  abiFile: ethersSchema.required(),
-  address: Joi.string().pattern(new RegExp(addrPattern)).required().trim(),
-  events: Joi.object().pattern(Joi.string(), Joi.object().concat(EventName2)),
-});
-const contractName3 = Joi.object({
-  abiFile: ethersSchema.required(),
-  address: Joi.string().pattern(new RegExp(addrPattern)).required().trim(),
-  proxy: Joi.string().allow("").optional().trim(),
-});
-
-const schema = {
-  adminEvents: Joi.object({
-    developerAbbreviation: Joi.string().required().trim(),
-    protocolName: Joi.string().required().trim(),
-    protocolAbbreviation: Joi.string().required().trim(),
-    contracts: Joi.object().pattern(
-      Joi.string(),
-      Joi.object()
-        .concat(contractName1)
-        .concat(contractName2)
-        .concat(contractName3)
-    ),
+  thresholdEth: Joi.number().required(),
+  alert: Joi.object({
+    type: Joi.string().required().trim(),
+    severity: Joi.string().required().trim(),
   }),
-};
+});
+const contractSchemaAE = Joi.object({
+  abiFile: Joi.required().valid(Joi.in("/abi")),
+  address: Joi.string().pattern(new RegExp(addrPattern)).required().trim(),
+  events: eventSchema,
+  proxy: Joi.valid(Joi.in("/")),
+});
 
-const adminEventsResult = schema.adminEvents.validate(adminEvents);
+const contractSchemaMFC = Joi.object({
+  abiFile: Joi.required().valid(Joi.in("/abi")),
+  address: Joi.string().pattern(new RegExp(addrPattern)).required().trim(),
+  functions: functionSchema,
+});
 
-if (adminEventsResult.error) {
-  console.log(adminEventsResult.error.details);
-} else {
-  console.log("Validated Data", adminEventsResult);
-}
-module.exports = schema;
+
+const accountBalanceSchema= Joi.object({
+  developerAbbreviation: Joi.string().required().trim(),
+  protocolName: Joi.string().allow("").optional().trim(),
+  protocolAbbreviation: Joi.string().allow("").optional(),
+  accountBalance: Joi.object().pattern(Joi.string(), contractSchemaAB),
+  alertMinimumIntervalSeconds: Joi.number().required(),
+})
+
+const adminEventsSchema=Joi.object({
+  developerAbbreviation: Joi.string().required().trim(),
+  protocolName: Joi.string().required().trim(),
+  protocolAbbreviation: Joi.string().required().trim(),
+  contracts: Joi.object().pattern(Joi.string(), contractSchemaAE),
+})
+
+const monitorFunctionCallsSchema= Joi.object({
+  developerAbbreviation: Joi.string().required().trim(),
+  protocolName: Joi.string().required().trim(),
+  protocolAbbreviation: Joi.string().required().trim(),
+  contracts: Joi.object().pattern(Joi.string(), contractSchemaMFC),
+})
+
+const schema = Joi.object().keys({
+  abi: Joi.object().pattern(Joi.string(), ethersSchema),
+  config: [accountBalanceSchema, adminEventsSchema, monitorFunctionCallsSchema],
+});
