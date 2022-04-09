@@ -47,7 +47,7 @@ const contractSchemaAE = Joi.object({
   abiFile: Joi.required().valid(Joi.in("/abi")),
   address: Joi.string().pattern(new RegExp(addrPattern)).required().trim(),
   events: eventSchema,
-  proxy: Joi.valid(Joi.in("/")),
+  proxy: Joi.optional().valid(Joi.in("/")),
 });
 
 const contractSchemaMFC = Joi.object({
